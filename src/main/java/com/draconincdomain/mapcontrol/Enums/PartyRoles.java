@@ -1,4 +1,4 @@
-package com.draconincdomain.mapcontrol.Objects;
+package com.draconincdomain.mapcontrol.Enums;
 
 public enum PartyRoles {
     LEADER, OFFICER, MEMBER

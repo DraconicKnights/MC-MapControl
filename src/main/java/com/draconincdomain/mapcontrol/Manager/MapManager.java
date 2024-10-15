@@ -2,14 +2,13 @@ package com.draconincdomain.mapcontrol.Manager;
 
 import com.draconincdomain.mapcontrol.Objects.Party;
 import com.draconincdomain.mapcontrol.Objects.PartyMap;
-import com.draconincdomain.mapcontrol.Objects.PartyNotificationAlert;
+import com.draconincdomain.mapcontrol.Enums.PartyNotificationAlert;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class MapManager {
     private final MapManager Instance;

@@ -1,7 +1,6 @@
 package com.draconincdomain.mapcontrol.Objects;
 
-import com.draconincdomain.mapcontrol.Objects.PartyRoles;
-import org.checkerframework.checker.units.qual.A;
+import com.draconincdomain.mapcontrol.Enums.PartyRoles;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -12,8 +11,6 @@ public class Party implements Serializable {
     private String Name;
     private Map<UUID, PartyRoles> Players;
     private UUID Leader;
-
-    private boolean Admin;
 
     public Party(String name, UUID leader) {
         Name = name;
