@@ -1,8 +1,12 @@
 package com.draconincdomain.mapcontrol;
 
 import com.draconincdomain.mapcontrol.Annotations.Commands;
+import com.draconincdomain.mapcontrol.Annotations.Events;
 import com.draconincdomain.mapcontrol.Commands.CommandCore;
 import com.draconincdomain.mapcontrol.Manager.MapManager;
+import com.draconincdomain.mapcontrol.Manager.PartyManager;
+import org.bukkit.Bukkit;
+import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
@@ -19,7 +23,9 @@ public final class MapControl extends JavaPlugin {
         // Plugin startup logic
         Instance = this;
         new MapManager();
+        new PartyManager();
         registerPluginCommands();
+        registerEvents();
     }
 
     @Override
@@ -44,6 +50,22 @@ public final class MapControl extends JavaPlugin {
 
                 CommandCore commandInstance = (CommandCore) commandClass.getDeclaredConstructor().newInstance();
                 commandInstance.register(commandName, permission, requiresPlayer, hasCooldown, cooldownValue);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void registerEvents() {
+        String packageName = getClass().getPackage().getName();
+
+        Reflections reflections = new Reflections(packageName + ".Events", new TypeAnnotationsScanner(), new SubTypesScanner());
+        Set<Class<?>> customEventClasses = reflections.getTypesAnnotatedWith(Events.class);
+
+        for (Class<?> eventClass : customEventClasses) {
+            try {
+                Listener listener = (Listener) eventClass.getDeclaredConstructor().newInstance();
+                Bukkit.getServer().getPluginManager().registerEvents( listener, this);
             } catch (Exception e) {
                 e.printStackTrace();
             }

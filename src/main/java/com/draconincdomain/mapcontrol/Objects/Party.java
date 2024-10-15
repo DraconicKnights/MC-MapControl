@@ -11,11 +11,13 @@ public class Party implements Serializable {
     private String Name;
     private Map<UUID, PartyRoles> Players;
     private UUID Leader;
+    private int partyId;
 
-    public Party(String name, UUID leader) {
+    public Party(String name, UUID leader, int partyId) {
         Name = name;
         this.Players = new HashMap<>();
         this.Leader = leader;
+        this.partyId = partyId;
         this.Players.put(leader, PartyRoles.LEADER);
     }
 
@@ -43,12 +45,28 @@ public class Party implements Serializable {
         return Players;
     }
 
+    public void addMember(UUID playerUUID) {
+        Players.put(playerUUID, PartyRoles.MEMBER);
+    }
+
+    public void removeMember(UUID playerUUID) {
+        Players.remove(playerUUID);
+    }
+
+    public void partyDisband() {
+        Players.clear();
+    }
+
     public PartyRoles getRole(UUID playerUUID) {
         return getPlayers().getOrDefault(playerUUID, PartyRoles.MEMBER);
     }
 
     public int getSize() {
         return this.getPlayers().size();
+    }
+
+    public int getPartyId() {
+        return partyId;
     }
 
     public boolean isPartyLeader(UUID playerUUID) {

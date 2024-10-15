@@ -11,12 +11,12 @@ import org.bukkit.entity.Player;
 import java.util.*;
 
 public class MapManager {
-    private final MapManager Instance;
+    private static MapManager Instance;
     private final Map<PartyMap, Party> activeInstances = new HashMap<>();
     private final List<PartyMap> allMaps = new ArrayList<>();
 
     public MapManager() {
-        this.Instance = this;
+        Instance = this;
     }
 
     public List<PartyMap> getAllMaps() {
@@ -36,7 +36,7 @@ public class MapManager {
         PartyMap selectedMap = getMapByName(mapName);
 
         if (selectedMap == null) {
-            alertParty(party, PartyNotificationAlert.WARNING, "Map not found");
+            PartyManager.getInstance().alertParty(party, PartyNotificationAlert.WARNING, "Map not found");
         }
 
         if (!party.isPartyLeader(party.getLeader())) {
@@ -48,7 +48,7 @@ public class MapManager {
         }
 
         if (party.getSize() > selectedMap.getMaxPlayers()) {
-            alertParty(party, PartyNotificationAlert.WARNING, "Too many players for this map");
+            PartyManager.getInstance().alertParty(party, PartyNotificationAlert.WARNING, "Too many players for this map");
             return;
         }
 
@@ -91,17 +91,7 @@ public class MapManager {
         }
     }
 
-   private void alertParty(Party party, PartyNotificationAlert alert, String message) {
-        party.getPlayers().forEach((playerUUID, role) -> {
-            Player player = Bukkit.getPlayer(playerUUID);
-            if (player != null) {
-
-                switch (alert) {
-                    case INFO -> player.sendMessage(ChatColor.GREEN + message);
-                    case WARNING -> player.sendMessage(ChatColor.RED + message);
-                    case SERVER -> player.sendMessage(ChatColor.BLUE + message);
-                }
-            }
-        });
-   }
+   public static MapManager getInstance() {
+        return Instance;
+    }
 }
