@@ -43,6 +43,11 @@ public final class MapControl extends JavaPlugin {
             try {
                 Commands commandAnnotation = commandClass.getAnnotation(Commands.class);
                 String commandName = commandAnnotation.name();
+                System.out.println("CommandName: " + commandName);
+                if (getCommand(commandName) == null) {
+                    System.out.println("Command " + commandName + " not found in plugin.yml");
+                }
+
                 String permission = commandAnnotation.permission();
                 boolean requiresPlayer = commandAnnotation.requiresPlayer();
                 boolean hasCooldown = commandAnnotation.hasCooldown();
@@ -50,6 +55,7 @@ public final class MapControl extends JavaPlugin {
 
                 CommandCore commandInstance = (CommandCore) commandClass.getDeclaredConstructor().newInstance();
                 commandInstance.register(commandName, permission, requiresPlayer, hasCooldown, cooldownValue);
+                getCommand(commandName).setExecutor(commandInstance);
             } catch (Exception e) {
                 e.printStackTrace();
             }

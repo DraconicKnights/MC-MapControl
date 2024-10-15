@@ -2,3 +2,5 @@ name: MC-MapControl
 version: '1.0-SNAPSHOT'
 main: com.draconincdomain.mapcontrol.MapControl
 api-version: '1.21'
+commands:
+  party:

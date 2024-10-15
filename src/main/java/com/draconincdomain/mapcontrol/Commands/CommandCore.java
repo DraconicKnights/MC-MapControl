@@ -33,9 +33,6 @@ public abstract class CommandCore implements CommandExecutor, TabExecutor {
         this.requiresPlayer = requiresPlayer;
         this.hasCooldown = hasCooldown;
         this.cooldownDuration = cooldownDuration;
-
-        MapControl.getInstance().getCommand(commandName).setExecutor(this);
-        MapControl.getInstance().getCommand(commandName).setTabCompleter(this);
     }
 
     protected abstract void execute(Player player, String[] args);
