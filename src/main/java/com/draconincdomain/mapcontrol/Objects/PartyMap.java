@@ -4,14 +4,16 @@ import org.bukkit.World;
 
 import java.io.Serializable;
 
-public class MC_Map implements Serializable {
+public class PartyMap implements Serializable {
     private String Name;
     private int MaxPlayers;
+    private Party Party;
     private World world;
 
-    public MC_Map(String name, int maxPlayers, World world) {
+    public PartyMap(String name, int maxPlayers, Party party, World world) {
         Name = name;
         MaxPlayers = maxPlayers;
+        Party = party;
         this.world = world;
     }
 
@@ -29,6 +31,14 @@ public class MC_Map implements Serializable {
 
     public void setMaxPlayers(int maxPlayers) {
         MaxPlayers = maxPlayers;
+    }
+
+    public Party getParty() {
+        return Party;
+    }
+
+    public void setParty(Party party) {
+        Party = party;
     }
 
     public World getWorld() {
