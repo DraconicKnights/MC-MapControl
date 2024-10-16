@@ -51,20 +51,4 @@ public class PartyMap implements Serializable {
     public void setWorld(World world) {
         this.world = world;
     }
-
-    public World loadWorldFromCustomDirectory(String worldPath) {
-        File worldFolder = new File(worldPath);
-        if (!worldFolder.exists()) {
-            Bukkit.getLogger().severe("World folder not found: " + worldPath);
-            return null;
-        }
-
-        // Create the world using the provided folder
-        World world = new WorldCreator(worldFolder.getName()).createWorld();
-        if (world == null) {
-            Bukkit.getLogger().severe("Failed to create world: " + worldFolder.getName());
-        }
-
-        return world;
-    }
 }

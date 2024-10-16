@@ -17,38 +17,29 @@ import java.util.*;
 
 public class MapManager {
     private static MapManager Instance;
+    private final Map<String, PartyMap> allMaps = new HashMap<>();
     private final Map<PartyMap, Party> activeInstances = new HashMap<>();
-    private final List<PartyMap> allMaps = new ArrayList<>();
 
     public MapManager() {
         Instance = this;
         loadMapsFromDirectory();
     }
 
-    public List<PartyMap> getAllMaps() {
+    public Map<String, PartyMap> getAllMaps() {
         return allMaps;
     }
 
-    public PartyMap getMapByName(String name) {
-        for (PartyMap map : allMaps) {
-            if (map.getName().equalsIgnoreCase(name)) {
-                return map;
-            }
-        }
-        return null;
+    public Optional<PartyMap> getMapByName(String name) {
+        return Optional.ofNullable(allMaps.get(name.toLowerCase()));
     }
 
     public void loadMapsFromDirectory() {
 
         File mapsDir = new File(MapControl.getInstance().getDataFolder(), "CustomMaps");
 
-        if (!mapsDir.exists()) {
-            if (mapsDir.mkdirs()) {
-                Bukkit.getLogger().info("Custom maps directory did not exist. Created new directory: " + mapsDir.getPath());
-            } else {
-                Bukkit.getLogger().severe("Failed to create custom maps directory: " + mapsDir.getPath());
-                return;
-            }
+        if (!mapsDir.exists() && !mapsDir.mkdirs()) {
+            Bukkit.getLogger().severe("Failed to create custom maps directory: " + mapsDir.getPath());
+            return;
         }
 
         if (!mapsDir.isDirectory()) {
@@ -60,15 +51,14 @@ public class MapManager {
             if (file.isDirectory()) {
                 String mapName = file.getName();
                 PartyMap partyMap = new PartyMap(mapName, 10, null, null);
-
-                allMaps.add(partyMap);
+                allMaps.put(mapName.toLowerCase(), partyMap);
                 Bukkit.getLogger().info("Loaded map: " + mapName);
             }
         }
     }
 
     public void createNewMapInstance(String mapName, Party party) {
-        PartyMap selectedMap = getMapByName(mapName);
+        PartyMap selectedMap = getMapByName(mapName).orElse(null);
 
         if (selectedMap == null) {
             PartyManager.getInstance().alertParty(party, PartyNotificationAlert.WARNING, "Map not found");
@@ -88,7 +78,9 @@ public class MapManager {
             return;
         }
 
-        String instancePath = MapControl.getInstance().getDataFolder() + "/ActiveMapInstances/" + party.getPartyId() + "_" + selectedMap.getName();
+        String mapInstanceName = party.getPartyId() + "_" + selectedMap.getName() + "_" + System.currentTimeMillis();
+        String instancePath = MapControl.getInstance().getDataFolder() + "/ActiveMapInstances/" + mapInstanceName;
+
         File originalMap = new File(MapControl.getInstance().getDataFolder() + "/CustomMaps/" + selectedMap.getName());
         File instanceMap = new File(instancePath);
 
@@ -103,17 +95,32 @@ public class MapManager {
         }
 
         try {
+            if (!instanceMap.exists() && !instanceMap.mkdirs()) {
+                PartyManager.getInstance().alertParty(party, PartyNotificationAlert.WARNING, "Failed to create instance map directory.");
+                return;
+            }
+
             FileUtils.copyDirectory(originalMap, instanceMap);
+            Bukkit.getLogger().info("Successfully copied original map to instance directory: " + instanceMap.getPath());
         } catch (IOException e) {
+            Bukkit.getLogger().severe("Failed to copy the map for this instance: " + e.getMessage());
             PartyManager.getInstance().alertParty(party, PartyNotificationAlert.WARNING, "Failed to copy the map for this instance.");
             return;
         }
 
-        World world = new WorldCreator(instanceMap.getName()).createWorld();
+        WorldCreator creator = new WorldCreator(mapInstanceName);
+     /*   creator.environment(World.Environment.NORMAL);
+        creator.generator(new VoidGenerator());*/
+        creator.createWorld();
+
+        World world = Bukkit.getWorld(mapInstanceName);
         if (world == null) {
             PartyManager.getInstance().alertParty(party, PartyNotificationAlert.WARNING, "Failed to load the map.");
             return;
         }
+
+        PartyMap partyMap = new PartyMap(mapInstanceName, 10, party, world);
+        selectedMap.setWorld(world);
 
         party.getPlayers().forEach((playerUUID, role) -> {
             Player player = Bukkit.getPlayer(playerUUID);
@@ -123,62 +130,57 @@ public class MapManager {
             }
         });
 
-        //List<UUID> playerUUIDs = players.stream().map(Player::getUniqueId).distinct().collect(Collectors.toList());
-
-        activeInstances.put(selectedMap, party);
+        activeInstances.put(partyMap, party);
     }
 
-    public void cleanupMapInstance(PartyMap map) {
-
-        Party party = activeInstances.get(map);
+    public void cleanupMapInstance(PartyMap partyMap) {
+        Party party = activeInstances.get(partyMap);
 
         if (party != null) {
-            World mainWorld = Bukkit.getWorld("world");
+            World world = Bukkit.getWorld(partyMap.getWorld().getName());
 
-            if (mainWorld == null) {
-                Bukkit.getLogger().severe("Main world not found. Cannot teleport players.");
-                return;
-            }
-
-            party.getPlayers().forEach((playerUUID, role) -> {
-                Player player = Bukkit.getPlayer(playerUUID);
-                if (player != null && player.isOnline()) {
-                    player.teleport(mainWorld.getSpawnLocation());
-                    player.sendMessage(ChatColor.YELLOW + "The map instance has ended. You have been teleported back to the main world.");
+            if (world != null) {
+                World mainWorld = Bukkit.getWorld("world");
+                if (mainWorld != null) {
+                    party.getPlayers().forEach((playerUUID, role) -> {
+                        Player player = Bukkit.getPlayer(playerUUID);
+                        if (player != null) {
+                            player.teleport(mainWorld.getSpawnLocation());
+                            player.sendMessage(ChatColor.YELLOW + "The map instance has ended. You have been teleported back to the main world.");
+                        }
+                    });
                 }
-            });
-        }
 
-        World world = map.getWorld();
-        if (world != null) {
-            Bukkit.unloadWorld(world, false);
-            File worldFolder = world.getWorldFolder();
-            try {
-                FileUtils.deleteDirectory(worldFolder);
-            } catch (IOException e) {
-                Bukkit.getLogger().severe("Failed to delete map instance folder: " + worldFolder.getName());
-                e.printStackTrace();
+                Bukkit.getScheduler().runTaskLater(MapControl.getInstance(), () -> {
+                    Bukkit.unloadWorld(world, false);
+                    if (Bukkit.getWorld(world.getName()) == null) {
+                        Bukkit.getLogger().info("World " + world.getName() + " successfully unloaded.");
+                    } else {
+                        Bukkit.getLogger().severe("Failed to unload world: " + world.getName());
+                    }
+
+                    String worldFolderPath = MapControl.getInstance().getDataFolder() + "/ActiveMapInstances/" + partyMap.getName();
+                    File worldFolder = new File(worldFolderPath);
+                    if (worldFolder.exists()) {
+                        try {
+                            FileUtils.deleteDirectory(worldFolder);
+                            Bukkit.getLogger().info("World folder deleted: " + worldFolder.getName());
+                        } catch (IOException e) {
+                            Bukkit.getLogger().severe("Failed to delete map instance folder: " + worldFolder.getName());
+                            e.printStackTrace();
+                        }
+                    } else {
+                        Bukkit.getLogger().severe("World folder not found for deletion: " + worldFolderPath);
+                    }
+                }, 20L);
             }
+        } else {
+            Bukkit.getLogger().warning("No active map instance found for: " + partyMap.getName());
         }
-
-        activeInstances.remove(map);
+        activeInstances.remove(partyMap);
     }
 
-    public void playerRemoval(PartyMap targetMap, Player player) {
-        Party party = activeInstances.get(targetMap);
-        if (party != null) {
-            UUID playerUUID = player.getUniqueId();
-            party.getPlayers().remove(playerUUID);
-            player.sendMessage(ChatColor.YELLOW + "You have been removed from the map: " + targetMap.getName());
-
-            // If party is empty remove and clean up map
-            if (party.getSize() == 0) {
-                cleanupMapInstance(targetMap);
-            }
-        }
-    }
-
-    public PartyMap getActiveMapForParty(Party party) {
+    public PartyMap getActivePartyMapInstance(Party party) {
         for (Map.Entry<PartyMap, Party> entry : activeInstances.entrySet()) {
             if (entry.getValue().equals(party)) {
                 return entry.getKey();

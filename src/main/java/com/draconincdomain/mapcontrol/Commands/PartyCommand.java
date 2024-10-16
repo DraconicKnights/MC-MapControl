@@ -103,6 +103,12 @@ public class PartyCommand extends CommandCore {
         message.append(ChatColor.AQUA).append("/party join ")
                 .append(ChatColor.GOLD).append("- Joins a party\n");
 
+        message.append(ChatColor.AQUA).append("/party loadmap ")
+                .append(ChatColor.GOLD).append("- Loads a map for your party\n");
+
+        message.append(ChatColor.AQUA).append("/party endmap ")
+                .append(ChatColor.GOLD).append("- Ends the current party map\n");
+
         message.append(ChatColor.GOLD).append("====================================");
 
         player.sendMessage(message.toString());
@@ -142,7 +148,7 @@ public class PartyCommand extends CommandCore {
             return;
         }
 
-        PartyMap currentMap = MapManager.getInstance().getActiveMapForParty(party);
+        PartyMap currentMap = MapManager.getInstance().getActivePartyMapInstance(party);
         if (currentMap == null) {
             player.sendMessage(ChatColor.RED + "No map is currently active for your party.");
             return;
