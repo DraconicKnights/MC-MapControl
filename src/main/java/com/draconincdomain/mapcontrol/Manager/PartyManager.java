@@ -23,6 +23,10 @@ public class PartyManager {
         return allParties;
     }
 
+    public void removeParty(Party party) {
+        allParties.remove(party.getPartyId());
+    }
+
     public Party createParty(Player player) {
         Party newParty = new Party(player.getName() + "'s Party", player.getUniqueId(), nextPartyId++);
         allParties.put(newParty.getPartyId(), newParty);
@@ -35,9 +39,6 @@ public class PartyManager {
 
     public void removePlayerFromParty(Party party, UUID playerUUID) {
         party.removeMember(playerUUID);
-        if (party.getLeader().equals(playerUUID)) {
-            party.partyDisband();
-        }
     }
 
     public void disbandParty(Party party) {

@@ -36,33 +36,36 @@ public abstract class CommandCore implements CommandExecutor, TabExecutor {
     }
 
     protected abstract void execute(Player player, String[] args);
+    protected abstract void execute(CommandSender sender, String[] args);
     protected abstract List<String> commandCompletion(Player player, Command command, String[] strings);
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {
-        if (commandSender instanceof Player) {
 
-            Player player = (Player) commandSender;
-
-            if (!player.hasPermission(this.permission)) {
-                player.sendMessage(ChatColor.RED + "You don't have permission to use this command, please contact a server administrator");
-                return true;
-            }
-
-            if (hasCooldown) {
-                UUID playerID = player.getUniqueId();
-                if (cooldowns.containsKey(playerID)) {
-                    long cooldownEnds = cooldowns.get(playerID);
-                    if (cooldownEnds > System.currentTimeMillis()) {
-                        return true;
-                    }
-                }
-                cooldowns.put(playerID, System.currentTimeMillis() + cooldownDuration * 1000);
-            }
-
-            execute(player, strings);
+        if (!requiresPlayer) {
+            execute(commandSender, strings);
             return true;
         }
-        return false;
+
+        Player player = (Player) commandSender;
+
+        if (!player.hasPermission(this.permission)) {
+            player.sendMessage(ChatColor.RED + "You don't have permission to use this command, please contact a server administrator");
+            return true;
+        }
+
+        if (hasCooldown) {
+            UUID playerID = player.getUniqueId();
+            if (cooldowns.containsKey(playerID)) {
+                long cooldownEnds = cooldowns.get(playerID);
+                if (cooldownEnds > System.currentTimeMillis()) {
+                    return true;
+                }
+            }
+            cooldowns.put(playerID, System.currentTimeMillis() + cooldownDuration * 1000);
+        }
+
+        execute(player, strings);
+        return true;
     }
 
     @Override

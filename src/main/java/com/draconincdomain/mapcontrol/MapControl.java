@@ -6,12 +6,14 @@ import com.draconincdomain.mapcontrol.Commands.CommandCore;
 import com.draconincdomain.mapcontrol.Manager.MapManager;
 import com.draconincdomain.mapcontrol.Manager.PartyManager;
 import org.bukkit.Bukkit;
+import org.bukkit.Server;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
 
+import java.util.Objects;
 import java.util.Set;
 
 public final class MapControl extends JavaPlugin {
@@ -45,7 +47,7 @@ public final class MapControl extends JavaPlugin {
                 String commandName = commandAnnotation.name();
                 System.out.println("CommandName: " + commandName);
                 if (getCommand(commandName) == null) {
-                    System.out.println("Command " + commandName + " not found in plugin.yml");
+                    System.out.println("Command " + commandName + " not found in paper-plugin.yml");
                 }
 
                 String permission = commandAnnotation.permission();

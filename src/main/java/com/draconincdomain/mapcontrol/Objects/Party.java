@@ -1,6 +1,7 @@
 package com.draconincdomain.mapcontrol.Objects;
 
 import com.draconincdomain.mapcontrol.Enums.PartyRoles;
+import com.draconincdomain.mapcontrol.Manager.PartyManager;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -41,6 +42,15 @@ public class Party implements Serializable {
         }
     }
 
+    private void promoteNextLeader() {
+        for (UUID memberUUID : Players.keySet()) {
+            if (Players.get(memberUUID) == PartyRoles.OFFICER || Players.get(memberUUID) == PartyRoles.MEMBER) {
+                setLeader(memberUUID);
+                break;
+            }
+        }
+    }
+
     public Map<UUID, PartyRoles> getPlayers() {
         return Players;
     }
@@ -51,10 +61,19 @@ public class Party implements Serializable {
 
     public void removeMember(UUID playerUUID) {
         Players.remove(playerUUID);
+
+        if (playerUUID.equals(Leader) && !Players.isEmpty()) {
+            promoteNextLeader();
+        }
+
+        if (!Players.isEmpty()) {
+            partyDisband();
+        }
     }
 
     public void partyDisband() {
         Players.clear();
+        PartyManager.getInstance().removeParty(this);
     }
 
     public PartyRoles getRole(UUID playerUUID) {
