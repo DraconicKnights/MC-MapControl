@@ -12,5 +12,5 @@ public @interface Commands {
     String permission() default "";
     boolean requiresPlayer() default true;
     boolean hasCooldown() default false;
-    int cooldownDuration();
+    int cooldownDuration() default 5;
 }

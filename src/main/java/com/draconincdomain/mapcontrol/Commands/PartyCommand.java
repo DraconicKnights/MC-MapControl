@@ -3,6 +3,7 @@ package com.draconincdomain.mapcontrol.Commands;
 import com.draconincdomain.mapcontrol.Annotations.Commands;
 import com.draconincdomain.mapcontrol.Enums.PartyRoles;
 import com.draconincdomain.mapcontrol.Manager.PartyManager;
+import com.draconincdomain.mapcontrol.Objects.InvitationRequest;
 import com.draconincdomain.mapcontrol.Objects.Party;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -11,10 +12,11 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-@Commands(name = "party", permission = "mapControl.admin", hasCooldown = true, cooldownDuration = 2)
+@Commands(name = "party", permission = "mapControl.default", hasCooldown = true, cooldownDuration = 2)
 public class PartyCommand extends CommandCore {
 
     @Override
@@ -45,6 +47,12 @@ public class PartyCommand extends CommandCore {
             case "demote":
                 demoteMember(player, args);
                 break;
+            case "chat":
+                handlePlayerChat(player, args);
+                break;
+            case "join":
+                handleJoinParty(player);
+                break;
             default:
                 player.sendMessage(ChatColor.RED + "Invalid party command.");
                 break;
@@ -59,10 +67,8 @@ public class PartyCommand extends CommandCore {
     private void displayPartyCommands(Player player) {
         StringBuilder message = new StringBuilder();
 
-        // Adding header
         message.append(ChatColor.GOLD).append("==========[ Party Commands ]===========\n");
 
-        // Party commands with descriptions
         message.append(ChatColor.AQUA).append("/party create ")
                 .append(ChatColor.GOLD).append("- Create a new party\n");
 
@@ -81,10 +87,14 @@ public class PartyCommand extends CommandCore {
         message.append(ChatColor.AQUA).append("/party disband ")
                 .append(ChatColor.GOLD).append("- Disband your party\n");
 
-        // Adding footer
+        message.append(ChatColor.AQUA).append("/party chat ")
+                .append(ChatColor.GOLD).append("- Chat with your party members\n");
+
+        message.append(ChatColor.AQUA).append("/party join ")
+                .append(ChatColor.GOLD).append("- Joins a party\n");
+
         message.append(ChatColor.GOLD).append("====================================");
 
-        // Send the message to the player
         player.sendMessage(message.toString());
     }
 
@@ -105,27 +115,42 @@ public class PartyCommand extends CommandCore {
             player.sendMessage(ChatColor.RED + "Usage: /party invite <playerName>");
             return;
         }
+
         Party party = PartyManager.getInstance().findPlayerParty(player.getUniqueId());
-        if (party == null || !party.getLeader().equals(player.getUniqueId())) {
+        if (party == null) {
+            player.sendMessage(ChatColor.RED + "You must be in a party to use this command");
+            return;
+        }
+
+        if (!party.getLeader().equals(player.getUniqueId())) {
             player.sendMessage(ChatColor.RED + "You must be the party leader to invite players.");
             return;
         }
+
         Player target = Bukkit.getPlayer(args[1]);
         if (target == null) {
             player.sendMessage(ChatColor.RED + "Player not found.");
             return;
         }
-        PartyManager.getInstance().invitePlayer(party, target.getUniqueId());
+
+        if (PartyManager.getInstance().isPlayerInParty(target.getUniqueId())) {
+            player.sendMessage(ChatColor.RED + "Player is already in the party.");
+            return;
+        }
+
+        PartyManager.getInstance().invitePlayer(party, target);
         player.sendMessage(ChatColor.GREEN + target.getName() + " has been invited to the party.");
     }
 
     private void leaveParty(Player player) {
         player.sendMessage(ChatColor.GREEN + "You left the party.");
         Party party = PartyManager.getInstance().findPlayerParty(player.getUniqueId());
+
         if (party == null) {
             player.sendMessage(ChatColor.RED + "You are not in a party.");
             return;
         }
+
         PartyManager.getInstance().removePlayerFromParty(party, player.getUniqueId());
         player.sendMessage(ChatColor.GREEN + "You left the party.");
     }
@@ -143,10 +168,10 @@ public class PartyCommand extends CommandCore {
 
         Player leader = Bukkit.getPlayer(party.getLeader());
         if (leader != null) {
-            message.append(ChatColor.YELLOW + "Party Lead: " +  ChatColor.GOLD + leader.getName() + "\n");
+            message.append(ChatColor.YELLOW + "Party Lead: " +  ChatColor.LIGHT_PURPLE + leader.getName() + "\n");
         }
 
-        message.append(ChatColor.GOLD + "==========[ Party Members ]===========\n");
+        message.append(ChatColor.AQUA + "==========[ Party Members ]===========\n");
         for (UUID memberUUID : party.getPlayers().keySet()) {
             Player member = Bukkit.getPlayer(memberUUID);
             if (member != null) {
@@ -231,6 +256,41 @@ public class PartyCommand extends CommandCore {
         }
     }
 
+    private void handleJoinParty(Player player) {
+        UUID playerId = player.getUniqueId();
+
+        if (PartyManager.getInstance().getPendingInvitations().containsKey(playerId)) {
+            PartyManager.getInstance().joinParty(player);
+        }
+    }
+
+    private void handlePlayerChat(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage(ChatColor.RED + "Usage: /party chat <message>");
+            return;
+        }
+
+        Party party = PartyManager.getInstance().findPlayerParty(player.getUniqueId());
+        if (party == null) {
+            player.sendMessage(ChatColor.RED + "You are not in a party");
+            return;
+        }
+
+        String message = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+        sendPartyChatMessage(player, party, message);
+    }
+
+    private void sendPartyChatMessage(Player sender, Party party, String message) {
+        String formattedMessage = ChatColor.DARK_AQUA + "[Party] " + ChatColor.GOLD + "[" + party.getRole(sender.getUniqueId()) + "] " + ChatColor.DARK_GREEN + sender.getName() + ": " + ChatColor.AQUA + message;
+
+        party.getPlayers().forEach((memberUUID, role) -> {
+            Player member = Bukkit.getPlayer(memberUUID);
+            if (member != null) {
+                member.sendMessage(formattedMessage);
+            }
+        });
+    }
+
     @Override
     protected List<String> commandCompletion(Player player, Command command, String[] strings) {
         List<String> completions = new ArrayList<>();
@@ -239,6 +299,9 @@ public class PartyCommand extends CommandCore {
             completions.add("invite");
             completions.add("leave");
             completions.add("list");
+            completions.add("promote");
+            completions.add("demote");
+            completions.add("chat");
         }
         return completions;
     }

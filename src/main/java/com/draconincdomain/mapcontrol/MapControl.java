@@ -13,7 +13,6 @@ import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
 
-import java.util.Objects;
 import java.util.Set;
 
 public final class MapControl extends JavaPlugin {

@@ -7,3 +7,4 @@ commands:
     description: "Will spawn a custom entity from the custom mob enum"
     usage: "/party"
     permission: party.admin
+  aparty:

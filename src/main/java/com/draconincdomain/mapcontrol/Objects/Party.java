@@ -2,6 +2,7 @@ package com.draconincdomain.mapcontrol.Objects;
 
 import com.draconincdomain.mapcontrol.Enums.PartyRoles;
 import com.draconincdomain.mapcontrol.Manager.PartyManager;
+import org.bukkit.entity.Player;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -60,8 +61,6 @@ public class Party implements Serializable {
     }
 
     public void removeMember(UUID playerUUID) {
-        Players.remove(playerUUID);
-
         if (playerUUID.equals(Leader) && !Players.isEmpty()) {
             promoteNextLeader();
         }
@@ -69,11 +68,12 @@ public class Party implements Serializable {
         if (!Players.isEmpty()) {
             partyDisband();
         }
+        Players.remove(playerUUID);
     }
 
     public void partyDisband() {
         Players.clear();
-        PartyManager.getInstance().removeParty(this);
+        PartyManager.getInstance().disbandParty(this);
     }
 
     public PartyRoles getRole(UUID playerUUID) {
