@@ -1,12 +1,16 @@
 package com.draconincdomain.mapcontrol.Commands;
 
 import com.draconincdomain.mapcontrol.Annotations.Commands;
+import com.draconincdomain.mapcontrol.Enums.PartyNotificationAlert;
 import com.draconincdomain.mapcontrol.Enums.PartyRoles;
+import com.draconincdomain.mapcontrol.Manager.MapManager;
 import com.draconincdomain.mapcontrol.Manager.PartyManager;
 import com.draconincdomain.mapcontrol.Objects.InvitationRequest;
 import com.draconincdomain.mapcontrol.Objects.Party;
+import com.draconincdomain.mapcontrol.Objects.PartyMap;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -53,6 +57,12 @@ public class PartyCommand extends CommandCore {
             case "join":
                 handleJoinParty(player);
                 break;
+            case "loadmap":
+                loadMapForParty(player, args);
+                break;
+            case "endmap":
+                endMapForParty(player);
+                break;
             default:
                 player.sendMessage(ChatColor.RED + "Invalid party command.");
                 break;
@@ -96,6 +106,50 @@ public class PartyCommand extends CommandCore {
         message.append(ChatColor.GOLD).append("====================================");
 
         player.sendMessage(message.toString());
+    }
+
+    private void loadMapForParty(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage(ChatColor.RED + "Usage: /party loadmap <mapName>");
+            return;
+        }
+
+        Party party = PartyManager.getInstance().findPlayerParty(player.getUniqueId());
+        if (party == null) {
+            player.sendMessage(ChatColor.RED + "You are not in a party.");
+            return;
+        }
+
+        if (!party.getLeader().equals(player.getUniqueId())) {
+            player.sendMessage(ChatColor.RED + "Only the party leader can load the map.");
+            return;
+        }
+        String mapName = args[1];
+        MapManager.getInstance().createNewMapInstance(mapName, party);
+
+        player.sendMessage(ChatColor.GREEN + "Map loaded successfully. All party members have been teleported.");
+    }
+
+    private void endMapForParty(Player player) {
+        Party party = PartyManager.getInstance().findPlayerParty(player.getUniqueId());
+        if (party == null) {
+            player.sendMessage(ChatColor.RED + "You are not in a party.");
+            return;
+        }
+
+        if (!party.getLeader().equals(player.getUniqueId())) {
+            player.sendMessage(ChatColor.RED + "Only the party leader can end the map.");
+            return;
+        }
+
+        PartyMap currentMap = MapManager.getInstance().getActiveMapForParty(party);
+        if (currentMap == null) {
+            player.sendMessage(ChatColor.RED + "No map is currently active for your party.");
+            return;
+        }
+
+        MapManager.getInstance().cleanupMapInstance(currentMap);
+        PartyManager.getInstance().alertParty(party, PartyNotificationAlert.INFO, "Map has been ended and cleaned up.");
     }
 
     private void createParty(Player player, String[] args) {
@@ -302,6 +356,8 @@ public class PartyCommand extends CommandCore {
             completions.add("promote");
             completions.add("demote");
             completions.add("chat");
+            completions.add("loadmap");
+            completions.add("endmap");
         }
         return completions;
     }
