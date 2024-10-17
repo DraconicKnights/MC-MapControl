@@ -63,10 +63,10 @@ public class AdminPartyCommand extends CommandCore{
                 .append(ChatColor.GOLD).append("- Create a new party\n");
 
         message.append(ChatColor.AQUA).append("/aparty details <partyID>")
-                .append(ChatColor.GOLD).append("- Invite a player to your party\n");
+                .append(ChatColor.GOLD).append("- Gives details of the target party\n");
 
         message.append(ChatColor.AQUA).append("/aparty forcejoin")
-                .append(ChatColor.GOLD).append("- Leave your current party\n");
+                .append(ChatColor.GOLD).append("- Force joins the target party\n");
 
         message.append(ChatColor.GOLD).append("====================================");
 
@@ -114,6 +114,12 @@ public class AdminPartyCommand extends CommandCore{
 
         StringBuilder message = new StringBuilder();
         message.append(ChatColor.GOLD + "==========[ Party Details ]===========\n");
+
+        message.append(ChatColor.DARK_GREEN + "Founder: " + ChatColor.GOLD + party.getFounderName() + "\n");
+        message.append(ChatColor.YELLOW + "Founded Date: " + ChatColor.LIGHT_PURPLE + party.getFormattedDate() + "\n");
+
+        message.append(ChatColor.GOLD + "==========[ Party Info ]===========\n");
+
         message.append(ChatColor.AQUA + "Party Name: " + ChatColor.DARK_AQUA + party.getName() + "\n");
 
         Player leader = Bukkit.getPlayer(party.getLeader());
@@ -159,7 +165,7 @@ public class AdminPartyCommand extends CommandCore{
             return;
         }
 
-        party.addMember(player.getUniqueId());
+        PartyManager.getInstance().addPlayerToParty(party, player.getUniqueId());
         player.sendMessage(ChatColor.GREEN + "You have joined the party: " + party.getName());
     }
 

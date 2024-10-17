@@ -4,10 +4,20 @@ import com.draconincdomain.mapcontrol.Enums.PartyNotificationAlert;
 import com.draconincdomain.mapcontrol.MapControl;
 import com.draconincdomain.mapcontrol.Objects.InvitationRequest;
 import com.draconincdomain.mapcontrol.Objects.Party;
+import com.draconincdomain.mapcontrol.Utils.ColourUtil;
+import com.draconincdomain.mapcontrol.Utils.ComponentBuilder;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.TextColor;
+import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -30,7 +40,7 @@ public class PartyManager {
     }
 
     public Party createParty(Player player) {
-        Party newParty = new Party(player.getName() + "'s Party", player.getUniqueId(), nextPartyId++);
+        Party newParty = new Party(player.getName() + "'s Party", player.getUniqueId(), player.getName(), nextPartyId++, LocalDateTime.now());
         allParties.put(newParty.getPartyId(), newParty);
         return newParty;
     }
@@ -39,12 +49,23 @@ public class PartyManager {
         InvitationRequest invitationRequest = new InvitationRequest(party.getLeader(), player.getUniqueId(), party);
         pendingInvitations.put(player.getUniqueId(), invitationRequest);
 
-        player.sendMessage(ChatColor.GREEN + "You have been invited to join: " + party.getName());
+        Component message = ComponentBuilder.create("You have been invited to join: ", ColourUtil.fromEnum(ColourUtil.CustomColour.AQUA))
+                .hover("[Click to join Party]")
+                .click("/party join")
+                .build();
+        Component clickToJoin = ComponentBuilder.create("[Click to join]", ColourUtil.fromEnum(ColourUtil.CustomColour.AQUA))
+                .hover("Click to join")
+                .click("/party join")
+                .build();
+
+        player.sendMessage(message.append(clickToJoin));
 
         Bukkit.getScheduler().runTaskLater(MapControl.getInstance(), () -> {
             if (pendingInvitations.containsKey(player.getUniqueId())) {
                 pendingInvitations.remove(player.getUniqueId());
                 player.sendMessage(ChatColor.RED + "Your invitation to join: " + party.getName() + " has expired");
+                Player sender = Bukkit.getPlayer(party.getLeader());
+                sender.sendMessage(ChatColor.RED + "Player: " + ChatColor.AQUA + player.getName() + ChatColor.RED + " Has not accepted the invitation");
             }
         }, 1200);
     }
@@ -53,9 +74,9 @@ public class PartyManager {
         InvitationRequest invitationRequest = pendingInvitations.get(player.getUniqueId());
 
         if (invitationRequest != null && !invitationRequest.isExpired()) {
-            Party party = findPlayerParty(invitationRequest.getInviter());
+            Party party = invitationRequest.getParty();
             if (party != null) {
-                party.addMember(player.getUniqueId());
+                addPlayerToParty(party, player.getUniqueId());
                 pendingInvitations.remove(player.getUniqueId());
                 player.sendMessage(ChatColor.GREEN + "you have joined: " + party.getName());
                 alertParty(party, PartyNotificationAlert.INFO, player.getName() + " Has joined the party");
@@ -80,8 +101,11 @@ public class PartyManager {
         party.removeMember(playerUUID);
     }
 
+    public void addPlayerToParty(Party party, UUID playerUUID) {
+        party.addMember(playerUUID);
+    }
+
     public void disbandParty(Party party) {
-        alertParty(party, PartyNotificationAlert.SERVER, "The party has been disbanded");
         allParties.remove(party.getPartyId());
     }
 

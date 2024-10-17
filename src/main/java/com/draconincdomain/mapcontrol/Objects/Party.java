@@ -1,25 +1,34 @@
 package com.draconincdomain.mapcontrol.Objects;
 
+import com.draconincdomain.mapcontrol.Enums.PartyNotificationAlert;
 import com.draconincdomain.mapcontrol.Enums.PartyRoles;
 import com.draconincdomain.mapcontrol.Manager.PartyManager;
 import org.bukkit.entity.Player;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public class Party implements Serializable {
     private String Name;
-    private Map<UUID, PartyRoles> Players;
     private UUID Leader;
+    private String FounderName;
     private int partyId;
+    private LocalDateTime Date;
+    private final Map<UUID, PartyRoles> Players;
 
-    public Party(String name, UUID leader, int partyId) {
+    public Party(String name, UUID leader,String founderName, int partyId, LocalDateTime date) {
         Name = name;
         this.Players = new HashMap<>();
         this.Leader = leader;
+        this.FounderName = founderName;
         this.partyId = partyId;
+        this.Date = date;
         this.Players.put(leader, PartyRoles.LEADER);
     }
 
@@ -27,12 +36,25 @@ public class Party implements Serializable {
         return Name;
     }
 
-    public void setName(String name) {
-        Name = name;
-    }
-
     public UUID getLeader() {
         return Leader;
+    }
+
+    public String getFounderName() {
+        return FounderName;
+    }
+
+    public LocalDateTime getDate() {
+        return Date;
+    }
+
+    public String getFormattedDate() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return Date.format(formatter);
+    }
+
+    public void setName(String name) {
+        Name = name;
     }
 
     public void setLeader(UUID leader) {
@@ -66,6 +88,7 @@ public class Party implements Serializable {
         }
 
         if (!Players.isEmpty()) {
+            PartyManager.getInstance().alertParty(this, PartyNotificationAlert.SERVER, "Their are no more members left within this party so it will be auto disbanded");
             partyDisband();
         }
         Players.remove(playerUUID);

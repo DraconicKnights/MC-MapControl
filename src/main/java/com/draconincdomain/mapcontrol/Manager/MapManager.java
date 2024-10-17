@@ -119,7 +119,9 @@ public class MapManager {
             return;
         }
 
-        PartyMap partyMap = new PartyMap(mapInstanceName, 10, party, world);
+        selectedMap.setName(mapInstanceName);
+        selectedMap.setMaxPlayers(4);
+        selectedMap.setParty(party);
         selectedMap.setWorld(world);
 
         party.getPlayers().forEach((playerUUID, role) -> {
@@ -130,7 +132,7 @@ public class MapManager {
             }
         });
 
-        activeInstances.put(partyMap, party);
+        activeInstances.put(selectedMap, party);
     }
 
     public void cleanupMapInstance(PartyMap partyMap) {

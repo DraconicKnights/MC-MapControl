@@ -5,12 +5,10 @@ import com.draconincdomain.mapcontrol.Enums.PartyNotificationAlert;
 import com.draconincdomain.mapcontrol.Enums.PartyRoles;
 import com.draconincdomain.mapcontrol.Manager.MapManager;
 import com.draconincdomain.mapcontrol.Manager.PartyManager;
-import com.draconincdomain.mapcontrol.Objects.InvitationRequest;
 import com.draconincdomain.mapcontrol.Objects.Party;
 import com.draconincdomain.mapcontrol.Objects.PartyMap;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -203,7 +201,6 @@ public class PartyCommand extends CommandCore {
     }
 
     private void leaveParty(Player player) {
-        player.sendMessage(ChatColor.GREEN + "You left the party.");
         Party party = PartyManager.getInstance().findPlayerParty(player.getUniqueId());
 
         if (party == null) {
@@ -212,7 +209,7 @@ public class PartyCommand extends CommandCore {
         }
 
         PartyManager.getInstance().removePlayerFromParty(party, player.getUniqueId());
-        player.sendMessage(ChatColor.GREEN + "You left the party.");
+        player.sendMessage(ChatColor.GREEN + "You have left the party: " + ChatColor.AQUA + party.getName());
     }
 
     private void listParty(Player player) {
@@ -280,7 +277,8 @@ public class PartyCommand extends CommandCore {
             party.promotePlayer(target.getUniqueId(), PartyRoles.OFFICER);
             player.sendMessage(ChatColor.GREEN + target.getName() + " has been promoted to Officer.");
         } else {
-            player.sendMessage(ChatColor.RED + target.getName() + " is already an Officer.");
+            party.setLeader(target.getUniqueId());
+            player.sendMessage(ChatColor.RED + target.getName() + " has been promoted to party leader");
         }
     }
 
@@ -321,6 +319,8 @@ public class PartyCommand extends CommandCore {
 
         if (PartyManager.getInstance().getPendingInvitations().containsKey(playerId)) {
             PartyManager.getInstance().joinParty(player);
+        } else {
+            player.sendMessage(ChatColor.RED + "You don't have any pending party invitations");
         }
     }
 
