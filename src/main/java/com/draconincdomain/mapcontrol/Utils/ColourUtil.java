@@ -13,7 +13,7 @@ public class ColourUtil {
         DARK_BLUE(0x00008B),
         REG_GREEN(0x00AA00),
         YELLOW(0xFFFF00),
-        LIGHT_PURpLE(0xFFFF00),
+        LIGHT_PURPLE(0xFFFF00),
         DARK_PURPLE(0xAA00AA),
         AQUA(0x00FFFF),
         ORANGE(0xFFA500),

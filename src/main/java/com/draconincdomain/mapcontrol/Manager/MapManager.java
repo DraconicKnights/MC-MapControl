@@ -28,6 +28,9 @@ public class MapManager {
     public Map<String, PartyMap> getAllMaps() {
         return allMaps;
     }
+    public Map<PartyMap, Party> getActiveInstances() {
+        return activeInstances;
+    }
 
     public Optional<PartyMap> getMapByName(String name) {
         return Optional.ofNullable(allMaps.get(name.toLowerCase()));

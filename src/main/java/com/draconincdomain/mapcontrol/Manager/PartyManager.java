@@ -4,6 +4,7 @@ import com.draconincdomain.mapcontrol.Enums.PartyNotificationAlert;
 import com.draconincdomain.mapcontrol.MapControl;
 import com.draconincdomain.mapcontrol.Objects.InvitationRequest;
 import com.draconincdomain.mapcontrol.Objects.Party;
+import com.draconincdomain.mapcontrol.Objects.PartyMap;
 import com.draconincdomain.mapcontrol.Utils.ColourUtil;
 import com.draconincdomain.mapcontrol.Utils.ComponentBuilder;
 import net.kyori.adventure.text.Component;
@@ -14,6 +15,7 @@ import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import java.time.LocalDate;
@@ -98,7 +100,34 @@ public class PartyManager {
     }
 
     public void removePlayerFromParty(Party party, UUID playerUUID) {
+        Map<PartyMap, Party> activeInstances = MapManager.getInstance().getActiveInstances();
+        PartyMap partyMap = MapManager.getInstance().getActivePartyMapInstance(party);
+        Player player = Bukkit.getPlayer(playerUUID);
+
+        if (player != null) {
+            if (activeInstances.containsKey(partyMap)) {
+                Party activeParty = activeInstances.get(partyMap);
+
+                if (activeParty != null && activeParty.getPlayers().containsKey(playerUUID)) {
+                    World mainWorld = Bukkit.getWorld("world");
+                    if (mainWorld != null) {
+                        player.teleport(mainWorld.getSpawnLocation());
+                        player.sendMessage(ChatColor.YELLOW + "You have been teleported back to the main world.");
+                    } else {
+                        player.sendMessage(ChatColor.RED + "Main world not found.");
+                    }
+                }
+            }
+
+        }
         party.removeMember(playerUUID);
+
+        if (party.getPlayers().isEmpty()) {
+            if (partyMap != null) {
+                MapManager.getInstance().cleanupMapInstance(partyMap);
+                Bukkit.getLogger().info("Party is empty. Map instance for " + partyMap.getName() + " has been unloaded and cleaned up.");
+            }
+        }
     }
 
     public void addPlayerToParty(Party party, UUID playerUUID) {
